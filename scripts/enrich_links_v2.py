@@ -101,9 +101,13 @@ def normalize_url(url: str) -> str:
 def is_valid_public_url(url: str) -> bool:
     if not url:
         return False
+    if any(ch.isspace() for ch in url):
+        return False
     p = urlparse(url)
     host = p.netloc.strip().lower()
     if not host or host in {"http", "https", "www", "localhost"}:
+        return False
+    if "@" in host:
         return False
     if "." not in host:
         return False
