@@ -93,6 +93,8 @@ def normalize_url(url: str) -> str:
         u = "https:" + u
     elif not u.startswith(("http://", "https://")):
         u = "https://" + u
+    u = u.replace("://www.diocese-averio.pt", "://www.diocese-aveiro.pt")
+    u = u.replace("://diocese-averio.pt", "://diocese-aveiro.pt")
     return u.strip()
 
 
@@ -264,6 +266,30 @@ class OfficialDirectories:
         self._angra = None
         self._guarda = None
         self._viseu = None
+        self._aveiro = None
+        self._coimbra = None
+        self._evora = None
+        self._funchal = None
+        self._lamego = None
+        self._viana = None
+        self._vilareal = None
+
+    def _load_aparoquia_v2(self, attr: str, diocese_id: int):
+        cached = getattr(self, attr)
+        if cached is not None:
+            return cached
+        items = self.session.post(
+            f"https://aparoquia.com/apo/webservice/v2/listar/paroquias/idDiocese/{diocese_id}",
+            data={"authCode": "ecfd1e3a7c22352e63ea9acda5299ae6"},
+            headers=UA,
+            timeout=20,
+        ).json()
+        index = {}
+        for item in items:
+            nome, orago = parse_api_name(item.get("nome", ""))
+            index[(normalize_text(nome), normalize_text(orago))] = item
+        setattr(self, attr, index)
+        return index
 
     def _load_porto(self):
         if self._porto is not None:
@@ -383,6 +409,27 @@ class OfficialDirectories:
         self._viseu = index
         return index
 
+    def _load_aveiro(self):
+        return self._load_aparoquia_v2("_aveiro", 3)
+
+    def _load_coimbra(self):
+        return self._load_aparoquia_v2("_coimbra", 7)
+
+    def _load_evora(self):
+        return self._load_aparoquia_v2("_evora", 8)
+
+    def _load_funchal(self):
+        return self._load_aparoquia_v2("_funchal", 9)
+
+    def _load_lamego(self):
+        return self._load_aparoquia_v2("_lamego", 11)
+
+    def _load_viana(self):
+        return self._load_aparoquia_v2("_viana", 18)
+
+    def _load_vilareal(self):
+        return self._load_aparoquia_v2("_vilareal", 19)
+
     def lookup(self, row: dict) -> dict:
         key = (normalize_text(row.get("nome", "")), normalize_text(row.get("orago", "")))
         diocese = row.get("diocese", "")
@@ -400,9 +447,36 @@ class OfficialDirectories:
             return self._guarda_lookup(key)
         if diocese == "Viseu":
             return self._viseu_lookup(key)
+        if diocese == "Aveiro":
+            return self._generic_aparoquia_lookup(self._load_aveiro(), key)
+        if diocese == "Coimbra":
+            return self._generic_aparoquia_lookup(self._load_coimbra(), key)
+        if diocese == "Évora":
+            return self._generic_aparoquia_lookup(self._load_evora(), key)
+        if diocese == "Funchal":
+            return self._generic_aparoquia_lookup(self._load_funchal(), key)
+        if diocese == "Lamego":
+            return self._generic_aparoquia_lookup(self._load_lamego(), key)
+        if diocese == "Viana do Castelo":
+            return self._generic_aparoquia_lookup(self._load_viana(), key)
+        if diocese == "Vila Real":
+            return self._generic_aparoquia_lookup(self._load_vilareal(), key)
         if diocese == "Braga":
             return self._braga_lookup(row)
         return {}
+
+    def _generic_aparoquia_lookup(self, entries: dict, key: tuple[str, str]) -> dict:
+        item = entries.get(key)
+        if not item:
+            return {}
+        website = normalize_url(item.get("website") or "")
+        if not is_valid_public_url(website):
+            return {}
+        if is_facebook(website):
+            return {"facebook": website}
+        if is_instagram(website):
+            return {"instagram": website}
+        return {"site": website}
 
     def _porto_lookup(self, key: tuple[str, str]) -> dict:
         item = self._load_porto().get(key)
@@ -517,6 +591,29 @@ def apply_official_candidates(row: dict, candidates: dict) -> None:
             row[f"{key}_confidence"] = "1.0"
 
 
+def normalize_row_links(row: dict) -> None:
+    site = normalize_url(row.get("site", ""))
+    facebook = normalize_url(row.get("facebook", ""))
+    instagram = normalize_url(row.get("instagram", ""))
+
+    if is_facebook(site):
+        if not facebook:
+            facebook = site
+            row["facebook_confidence"] = row.get("site_confidence") or "1.0"
+        site = ""
+        row["site_confidence"] = ""
+    elif is_instagram(site):
+        if not instagram:
+            instagram = site
+            row["instagram_confidence"] = row.get("site_confidence") or "1.0"
+        site = ""
+        row["site_confidence"] = ""
+
+    row["site"] = site
+    row["facebook"] = facebook
+    row["instagram"] = instagram
+
+
 def scan_site_for_socials(session: requests.Session, row: dict) -> None:
     site = normalize_url(row.get("site", ""))
     if not site or (row.get("facebook") and row.get("instagram")):
@@ -550,8 +647,11 @@ def enrich_row(
         if not is_valid_public_url(normalize_url(row.get(key, ""))):
             row[key] = ""
             row[f"{key}_confidence"] = ""
+        else:
+            row[key] = normalize_url(row.get(key, ""))
     for c in ("site_confidence", "facebook_confidence", "instagram_confidence"):
         row.setdefault(c, "")
+    normalize_row_links(row)
 
     ficha = row.get("url_ficha", "").strip()
     if ficha:
@@ -561,10 +661,12 @@ def enrich_row(
                 if direct[key]:
                     row[key] = direct[key]
                     row[f"{key}_confidence"] = "1.0"
+            normalize_row_links(row)
         except Exception:
             pass
 
     apply_official_candidates(row, directories.lookup(row))
+    normalize_row_links(row)
 
     if scan_site_socials and row.get("site"):
         scan_site_for_socials(session, row)
