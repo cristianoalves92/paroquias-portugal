@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Paróquias de Portugal</title>
+  <style>
+    :root {
+      --bg: #f5efe3;
+      --panel: #fffdf8;
+      --ink: #1f2933;
+      --muted: #6b7280;
+      --line: #dccfb8;
+      --brand: #874f2a;
+      --brand-soft: #efe0cc;
+      --accent: #1f6f78;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top right, rgba(135, 79, 42, 0.12), transparent 28%),
+        linear-gradient(180deg, #f8f3ea 0%, var(--bg) 100%);
+    }
+
+    a {
+      color: var(--accent);
+    }
+
+    .wrap {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 32px 20px 48px;
+    }
+
+    .hero {
+      display: grid;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .eyebrow {
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-size: 12px;
+      color: var(--brand);
+      font-weight: 700;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(34px, 5vw, 64px);
+      line-height: 0.95;
+      font-weight: 700;
+    }
+
+    .intro {
+      max-width: 760px;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.5;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px 18px;
+      box-shadow: 0 8px 24px rgba(31, 41, 51, 0.05);
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 28px;
+      margin-bottom: 4px;
+    }
+
+    .controls {
+      background: rgba(255, 253, 248, 0.9);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 16px;
+      display: grid;
+      grid-template-columns: 2.2fr 1fr 1fr 1fr;
+      gap: 12px;
+      position: sticky;
+      top: 12px;
+      backdrop-filter: blur(10px);
+      z-index: 5;
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    input,
+    select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 11px 12px;
+      font: inherit;
+      color: var(--ink);
+      background: #fff;
+    }
+
+    .table-shell {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 16px 40px rgba(31, 41, 51, 0.08);
+    }
+
+    .table-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 14px;
+      background: linear-gradient(180deg, rgba(239, 224, 204, 0.55), rgba(255, 253, 248, 0.9));
+    }
+
+    .table-wrap {
+      overflow: auto;
+      max-height: 72vh;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1100px;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 12px 14px;
+      vertical-align: top;
+      border-bottom: 1px solid #eee4d3;
+      font-size: 14px;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      background: #f4ead8;
+      color: var(--brand);
+      z-index: 1;
+    }
+
+    tr:hover td {
+      background: #fff8ee;
+    }
+
+    .pill {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 3px 8px;
+      background: var(--brand-soft);
+      color: var(--brand);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .empty {
+      padding: 24px 18px;
+      color: var(--muted);
+    }
+
+    .footer {
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    @media (max-width: 900px) {
+      .controls {
+        grid-template-columns: 1fr;
+        position: static;
+      }
+
+      .intro {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <div class="eyebrow">Paróquias de Portugal</div>
+      <h1>Consulta direta do CSV em página web.</h1>
+      <p class="intro">
+        Esta página lê o ficheiro <code>data/paroquias_portugal_anuario_catolico.csv</code> diretamente do repositório
+        e permite pesquisar por nome da paróquia, orago, arciprestado, diocese ou links disponíveis.
+      </p>
+    </section>
+
+    <section class="stats" id="stats">
+      <div class="stat"><strong id="stat-total">-</strong><span>Total de paróquias</span></div>
+      <div class="stat"><strong id="stat-sites">-</strong><span>Com site</span></div>
+      <div class="stat"><strong id="stat-facebook">-</strong><span>Com Facebook</span></div>
+      <div class="stat"><strong id="stat-instagram">-</strong><span>Com Instagram</span></div>
+    </section>
+
+    <section class="controls">
+      <label>
+        Pesquisa
+        <input id="search" type="search" placeholder="Ex.: Santa Eulália Pedorido">
+      </label>
+      <label>
+        Diocese
+        <select id="diocese">
+          <option value="">Todas</option>
+        </select>
+      </label>
+      <label>
+        Links
+        <select id="links">
+          <option value="">Todos</option>
+          <option value="site">Com site</option>
+          <option value="facebook">Com Facebook</option>
+          <option value="instagram">Com Instagram</option>
+          <option value="missing">Sem links</option>
+        </select>
+      </label>
+      <label>
+        Ordenar
+        <select id="sort">
+          <option value="nome">Nome</option>
+          <option value="diocese">Diocese</option>
+          <option value="arciprestado">Arciprestado</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="table-shell">
+      <div class="table-meta">
+        <div id="results-text">A carregar dados...</div>
+        <div><a href="./data/paroquias_portugal_anuario_catolico.csv">Abrir CSV</a></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Paróquia</th>
+              <th>Orago</th>
+              <th>Arciprestado</th>
+              <th>Diocese</th>
+              <th>Site</th>
+              <th>Facebook</th>
+              <th>Instagram</th>
+              <th>Ficha</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <div class="empty" id="empty" hidden>Sem resultados para este filtro.</div>
+      </div>
+    </section>
+
+    <p class="footer">
+      Se ativares GitHub Pages neste repositório, esta página pode ser consultada diretamente no browser sem ferramentas locais.
+    </p>
+  </main>
+
+  <script>
+    const CSV_PATH = "./data/paroquias_portugal_anuario_catolico.csv";
+    const state = {
+      rows: [],
+      filtered: [],
+    };
+
+    const tbody = document.getElementById("tbody");
+    const empty = document.getElementById("empty");
+    const searchInput = document.getElementById("search");
+    const dioceseSelect = document.getElementById("diocese");
+    const linksSelect = document.getElementById("links");
+    const sortSelect = document.getElementById("sort");
+    const resultsText = document.getElementById("results-text");
+
+    function parseCsv(text) {
+      const rows = [];
+      let row = [];
+      let cell = "";
+      let quoted = false;
+
+      for (let i = 0; i < text.length; i += 1) {
+        const ch = text[i];
+        const next = text[i + 1];
+
+        if (ch === '"') {
+          if (quoted && next === '"') {
+            cell += '"';
+            i += 1;
+          } else {
+            quoted = !quoted;
+          }
+        } else if (ch === "," && !quoted) {
+          row.push(cell);
+          cell = "";
+        } else if ((ch === "\n" || ch === "\r") && !quoted) {
+          if (ch === "\r" && next === "\n") {
+            i += 1;
+          }
+          row.push(cell);
+          if (row.some((value) => value !== "")) {
+            rows.push(row);
+          }
+          row = [];
+          cell = "";
+        } else {
+          cell += ch;
+        }
+      }
+
+      if (cell.length > 0 || row.length > 0) {
+        row.push(cell);
+        rows.push(row);
+      }
+
+      const [header, ...data] = rows;
+      return data.map((values) => Object.fromEntries(header.map((key, index) => [key, values[index] || ""])));
+    }
+
+    function normalize(value) {
+      return (value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+    }
+
+    function fillFilters(rows) {
+      const dioceses = [...new Set(rows.map((row) => row.diocese).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+      for (const diocese of dioceses) {
+        const option = document.createElement("option");
+        option.value = diocese;
+        option.textContent = diocese;
+        dioceseSelect.append(option);
+      }
+    }
+
+    function updateStats(rows) {
+      document.getElementById("stat-total").textContent = rows.length.toLocaleString("pt-PT");
+      document.getElementById("stat-sites").textContent = rows.filter((row) => row.site).length.toLocaleString("pt-PT");
+      document.getElementById("stat-facebook").textContent = rows.filter((row) => row.facebook).length.toLocaleString("pt-PT");
+      document.getElementById("stat-instagram").textContent = rows.filter((row) => row.instagram).length.toLocaleString("pt-PT");
+    }
+
+    function applyFilters() {
+      const query = normalize(searchInput.value.trim());
+      const diocese = dioceseSelect.value;
+      const links = linksSelect.value;
+      const sort = sortSelect.value;
+
+      const filtered = state.rows
+        .filter((row) => {
+          if (diocese && row.diocese !== diocese) {
+            return false;
+          }
+
+          if (links === "site" && !row.site) {
+            return false;
+          }
+          if (links === "facebook" && !row.facebook) {
+            return false;
+          }
+          if (links === "instagram" && !row.instagram) {
+            return false;
+          }
+          if (links === "missing" && (row.site || row.facebook || row.instagram)) {
+            return false;
+          }
+
+          if (!query) {
+            return true;
+          }
+
+          const haystack = normalize([
+            row.nome,
+            row.orago,
+            row.arciprestado,
+            row.diocese,
+            row.site,
+            row.facebook,
+            row.instagram,
+          ].join(" "));
+          return haystack.includes(query);
+        })
+        .sort((a, b) => (a[sort] || "").localeCompare(b[sort] || "", "pt"));
+
+      state.filtered = filtered;
+      renderRows(filtered);
+    }
+
+    function makeLink(url, label) {
+      if (!url) {
+        return '<span class="muted">-</span>';
+      }
+      return `<a href="${url}" target="_blank" rel="noreferrer">${label}</a>`;
+    }
+
+    function renderRows(rows) {
+      resultsText.textContent = `${rows.length.toLocaleString("pt-PT")} resultados`;
+      empty.hidden = rows.length !== 0;
+      tbody.innerHTML = rows.map((row) => `
+        <tr>
+          <td>${row.paroquia_id}</td>
+          <td><strong>${row.nome}</strong></td>
+          <td><span class="pill">${row.orago || "-"}</span></td>
+          <td>${row.arciprestado || '<span class="muted">-</span>'}</td>
+          <td>${row.diocese || '<span class="muted">-</span>'}</td>
+          <td>${makeLink(row.site, "Abrir")}</td>
+          <td>${makeLink(row.facebook, "Facebook")}</td>
+          <td>${makeLink(row.instagram, "Instagram")}</td>
+          <td>${makeLink(row.url_ficha, "Ficha")}</td>
+        </tr>
+      `).join("");
+    }
+
+    async function init() {
+      const response = await fetch(CSV_PATH);
+      if (!response.ok) {
+        throw new Error("Falha a carregar CSV");
+      }
+      const csvText = await response.text();
+      state.rows = parseCsv(csvText);
+      fillFilters(state.rows);
+      updateStats(state.rows);
+      applyFilters();
+    }
+
+    for (const el of [searchInput, dioceseSelect, linksSelect, sortSelect]) {
+      el.addEventListener("input", applyFilters);
+      el.addEventListener("change", applyFilters);
+    }
+
+    init().catch((error) => {
+      resultsText.textContent = "Não foi possível carregar os dados.";
+      empty.hidden = false;
+      empty.textContent = error.message;
+    });
+  </script>
+</body>
+</html>

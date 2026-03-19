@@ -5,6 +5,7 @@ Repositorio com a lista de paroquias catolicas em Portugal, extraida do site Anu
 ## Ficheiro principal
 
 - `data/paroquias_portugal_anuario_catolico.csv`
+- `index.html` para consulta no browser
 
 ## Colunas
 
@@ -31,3 +32,19 @@ Repositorio com a lista de paroquias catolicas em Portugal, extraida do site Anu
 ```bash
 python3 scripts/scrape_paroquias.py
 ```
+
+## Consulta web
+
+Abrir localmente:
+
+```bash
+python3 -m http.server
+```
+
+Depois abrir `http://localhost:8000`.
+
+Para publicar no GitHub Pages:
+
+1. Fazer push para o repositório.
+2. Em `Settings > Pages`, escolher `Deploy from a branch`.
+3. Selecionar a branch `master` e a pasta `/ (root)`.

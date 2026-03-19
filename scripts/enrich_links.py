@@ -233,12 +233,19 @@ def enrich_row(session: requests.Session, row: dict, delay_s: float) -> None:
     if not missing:
         return
 
-    query = f'{row.get("nome","")} {row.get("diocese","")} paroquia portugal'
-    try:
-        results = web_search(session, query)
-    except Exception:
-        time.sleep(delay_s)
-        return
+    queries = [
+        f'{row.get("orago","")} {row.get("nome","")} paroquia',
+        f'{row.get("orago","")} {row.get("nome","")} {row.get("arciprestado","")} paroquia',
+        f'{row.get("orago","")} {row.get("nome","")} {row.get("diocese","")} paroquia portugal',
+    ]
+    results: list[tuple[str, str]] = []
+    for query in queries:
+        try:
+            results = web_search(session, query)
+        except Exception:
+            results = []
+        if results:
+            break
 
     if not results:
         time.sleep(delay_s)
