@@ -748,6 +748,7 @@ def main() -> None:
     ap.add_argument("--diocese", action="append", default=[])
     ap.add_argument("--official-only", action="store_true")
     ap.add_argument("--scan-site-socials", action="store_true")
+    ap.add_argument("--only-site-without-facebook", action="store_true")
     ap.add_argument("--min-score", type=float, default=0.62)
     args = ap.parse_args()
 
@@ -766,6 +767,13 @@ def main() -> None:
         idx
         for idx, row in enumerate(rows)
         if (not dioceses or row.get("diocese") in dioceses)
+        and (
+            not args.only_site_without_facebook
+            or (
+                row.get("site", "").strip()
+                and not row.get("facebook", "").strip()
+            )
+        )
     ]
     if args.limit > 0:
         selected = selected[: args.limit]
