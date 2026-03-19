@@ -260,6 +260,7 @@ class OfficialDirectories:
         self._porto = None
         self._setubal = None
         self._santarem = None
+        self._leiria = None
 
     def _load_porto(self):
         if self._porto is not None:
@@ -313,6 +314,24 @@ class OfficialDirectories:
         self._santarem = index
         return index
 
+    def _load_leiria(self):
+        if self._leiria is not None:
+            return self._leiria
+        text = fetch(self.session, "https://www.leiria-fatima.pt/organica/paroquias/", timeout=20)
+        rows = re.findall(r'<tr[^>]*class="ninja_table_row_.*?</tr>', text, re.IGNORECASE | re.DOTALL)
+        index = {}
+        for row in rows:
+            cells = re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", row, re.IGNORECASE | re.DOTALL)
+            values = [clean_html_text(cell) for cell in cells]
+            if len(values) < 17:
+                continue
+            name = values[0]
+            site = normalize_url(values[14])
+            facebook = normalize_url(values[16])
+            index[normalize_text(name)] = {"site": site, "facebook": facebook}
+        self._leiria = index
+        return index
+
     def lookup(self, row: dict) -> dict:
         key = (normalize_text(row.get("nome", "")), normalize_text(row.get("orago", "")))
         diocese = row.get("diocese", "")
@@ -322,6 +341,8 @@ class OfficialDirectories:
             return self._setubal_lookup(key)
         if diocese == "Santarém":
             return self._santarem_lookup(key)
+        if diocese == "Leiria-Fátima":
+            return self._leiria_lookup(row, key)
         if diocese == "Braga":
             return self._braga_lookup(row)
         return {}
@@ -362,6 +383,21 @@ class OfficialDirectories:
             return {}
         website = normalize_url(item.get("website") or "")
         return {"site": website} if is_valid_public_url(website) else {}
+
+    def _leiria_lookup(self, row: dict, key: tuple[str, str]) -> dict:
+        entries = self._load_leiria()
+        result = entries.get(key[0], {})
+        if not result and normalize_text(row.get("arciprestado", "")) == "ourem":
+            composite = f"{row.get('nome','')} (Ourém)"
+            result = entries.get(normalize_text(composite), {})
+        clean = {}
+        site = normalize_url(result.get("site", ""))
+        facebook = normalize_url(result.get("facebook", ""))
+        if is_valid_public_url(site):
+            clean["site"] = site
+        if is_valid_public_url(facebook):
+            clean["facebook"] = facebook
+        return clean
 
     def _braga_lookup(self, row: dict) -> dict:
         url = f"https://arquidiocese-braga.pt/local/{slugify(row.get('nome',''))}-{slugify(row.get('orago',''))}"
