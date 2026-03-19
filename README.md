@@ -14,6 +14,9 @@ Repositorio com a lista de paroquias catolicas em Portugal, extraida do site Anu
 - `arciprestado`
 - `diocese`
 - `url_ficha`
+- `site` (vazio por omissao)
+- `facebook` (vazio por omissao)
+- `instagram` (vazio por omissao)
 
 ## Fonte
 

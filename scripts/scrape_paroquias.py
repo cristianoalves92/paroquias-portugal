@@ -56,6 +56,9 @@ def parse(text: str):
                 "arciprestado": clean(arciprestado),
                 "diocese": clean(diocese),
                 "url_ficha": f"https://www.anuariocatolicoportugal.net/ficha_paroquia_padre.asp?paroquiaid={pid}",
+                "site": "",
+                "facebook": "",
+                "instagram": "",
             }
         )
     return rows
@@ -98,7 +101,17 @@ def main() -> None:
     with OUT.open("w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(
             f,
-            fieldnames=["paroquia_id", "nome", "orago", "arciprestado", "diocese", "url_ficha"],
+            fieldnames=[
+                "paroquia_id",
+                "nome",
+                "orago",
+                "arciprestado",
+                "diocese",
+                "url_ficha",
+                "site",
+                "facebook",
+                "instagram",
+            ],
         )
         w.writeheader()
         w.writerows(all_rows)
