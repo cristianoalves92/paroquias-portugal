@@ -33,6 +33,26 @@ Repositorio com a lista de paroquias catolicas em Portugal, extraida do site Anu
 python3 scripts/scrape_paroquias.py
 ```
 
+## Enriquecer links
+
+Script original:
+
+```bash
+python3 scripts/enrich_links.py
+```
+
+Script melhorado com fontes oficiais por diocese, filtro por diocese e varrimento de redes sociais a partir do site:
+
+```bash
+python3 scripts/enrich_links_v2.py --diocese Setúbal --official-only --scan-site-socials
+```
+
+Exemplo com fallback para pesquisa web:
+
+```bash
+python3 scripts/enrich_links_v2.py --diocese Porto --scan-site-socials --min-score 0.62
+```
+
 ## Consulta web
 
 Abrir localmente:
