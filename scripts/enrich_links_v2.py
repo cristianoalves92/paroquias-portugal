@@ -262,6 +262,7 @@ class OfficialDirectories:
         self._santarem = None
         self._leiria = None
         self._angra = None
+        self._guarda = None
 
     def _load_porto(self):
         if self._porto is not None:
@@ -349,6 +350,22 @@ class OfficialDirectories:
         self._angra = index
         return index
 
+    def _load_guarda(self):
+        if self._guarda is not None:
+            return self._guarda
+        items = self.session.post(
+            "https://aparoquia.com/apo/webservice/v2/listar/paroquias/idDiocese/10",
+            data={"authCode": "ecfd1e3a7c22352e63ea9acda5299ae6"},
+            headers=UA,
+            timeout=20,
+        ).json()
+        index = {}
+        for item in items:
+            nome, orago = parse_api_name(item.get("nome", ""))
+            index[(normalize_text(nome), normalize_text(orago))] = item
+        self._guarda = index
+        return index
+
     def lookup(self, row: dict) -> dict:
         key = (normalize_text(row.get("nome", "")), normalize_text(row.get("orago", "")))
         diocese = row.get("diocese", "")
@@ -362,6 +379,8 @@ class OfficialDirectories:
             return self._leiria_lookup(row, key)
         if diocese == "Angra":
             return self._angra_lookup(row, key)
+        if diocese == "Guarda":
+            return self._guarda_lookup(key)
         if diocese == "Braga":
             return self._braga_lookup(row)
         return {}
@@ -424,6 +443,19 @@ class OfficialDirectories:
         if not item and key[0] == normalize_text("Santa Cruz"):
             item = entries.get((normalize_text("Santa Cruz - Lagoa"), key[1]))
         website = normalize_url((item or {}).get("website") or "")
+        if not is_valid_public_url(website):
+            return {}
+        if is_facebook(website):
+            return {"facebook": website}
+        if is_instagram(website):
+            return {"instagram": website}
+        return {"site": website}
+
+    def _guarda_lookup(self, key: tuple[str, str]) -> dict:
+        item = self._load_guarda().get(key)
+        if not item:
+            return {}
+        website = normalize_url(item.get("website") or "")
         if not is_valid_public_url(website):
             return {}
         if is_facebook(website):
