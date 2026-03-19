@@ -122,6 +122,23 @@ def is_social(url: str) -> bool:
     return is_facebook(url) or is_instagram(url)
 
 
+def is_generic_social(url: str) -> bool:
+    p = urlparse(url)
+    host = p.netloc.lower()
+    path = p.path.strip("/").lower()
+    if is_facebook(url):
+        if path in {"", "pages", "pg"}:
+            return True
+        if "googleworkspace" in path:
+            return True
+    if is_instagram(url):
+        if path in {"", "accounts"}:
+            return True
+        if "googleworkspace" in path:
+            return True
+    return host in {"facebook.com", "www.facebook.com", "instagram.com", "www.instagram.com"}
+
+
 def is_bad_site(url: str) -> bool:
     host = urlparse(url).netloc.lower()
     bad_hosts = {
@@ -377,10 +394,10 @@ def scan_site_for_socials(session: requests.Session, row: dict) -> None:
         return
     hrefs = [normalize_url(unquote(h)) for h in HREF_RE.findall(html_text)]
     for h in hrefs:
-        if not row.get("facebook") and is_valid_public_url(h) and is_facebook(h):
+        if not row.get("facebook") and is_valid_public_url(h) and is_facebook(h) and not is_generic_social(h):
             row["facebook"] = h
             row["facebook_confidence"] = row.get("site_confidence") or "0.9"
-        if not row.get("instagram") and is_valid_public_url(h) and is_instagram(h):
+        if not row.get("instagram") and is_valid_public_url(h) and is_instagram(h) and not is_generic_social(h):
             row["instagram"] = h
             row["instagram_confidence"] = row.get("site_confidence") or "0.9"
         if row.get("facebook") and row.get("instagram"):
