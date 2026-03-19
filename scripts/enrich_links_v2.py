@@ -271,10 +271,12 @@ class OfficialDirectories:
         self._guarda = None
         self._viseu = None
         self._aveiro = None
+        self._beja = None
         self._coimbra = None
         self._evora = None
         self._funchal = None
         self._lamego = None
+        self._lisboa = None
         self._viana = None
         self._vilareal = None
 
@@ -416,6 +418,9 @@ class OfficialDirectories:
     def _load_aveiro(self):
         return self._load_aparoquia_v2("_aveiro", 3)
 
+    def _load_beja(self):
+        return self._load_aparoquia_v2("_beja", 4)
+
     def _load_coimbra(self):
         return self._load_aparoquia_v2("_coimbra", 7)
 
@@ -427,6 +432,9 @@ class OfficialDirectories:
 
     def _load_lamego(self):
         return self._load_aparoquia_v2("_lamego", 11)
+
+    def _load_lisboa(self):
+        return self._load_aparoquia_v2("_lisboa", 13)
 
     def _load_viana(self):
         return self._load_aparoquia_v2("_viana", 18)
@@ -453,6 +461,8 @@ class OfficialDirectories:
             return self._viseu_lookup(key)
         if diocese == "Aveiro":
             return self._generic_aparoquia_lookup(self._load_aveiro(), key)
+        if diocese == "Beja":
+            return self._generic_aparoquia_lookup(self._load_beja(), key)
         if diocese == "Coimbra":
             return self._generic_aparoquia_lookup(self._load_coimbra(), key)
         if diocese == "Évora":
@@ -461,6 +471,8 @@ class OfficialDirectories:
             return self._generic_aparoquia_lookup(self._load_funchal(), key)
         if diocese == "Lamego":
             return self._generic_aparoquia_lookup(self._load_lamego(), key)
+        if diocese == "Lisboa":
+            return self._generic_aparoquia_lookup(self._load_lisboa(), key)
         if diocese == "Viana do Castelo":
             return self._generic_aparoquia_lookup(self._load_viana(), key)
         if diocese == "Vila Real":
