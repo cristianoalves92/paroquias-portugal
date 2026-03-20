@@ -19,6 +19,12 @@ UA = {
     )
 }
 
+DEFAULT_FETCH_TIMEOUT = 20
+SEARCH_TIMEOUT = 25
+DIRECTORY_TIMEOUT = 30
+BRAGA_LOOKUP_TIMEOUT = 15
+SITE_SOCIAL_SCAN_TIMEOUT = 20
+
 RESULT_RE = re.compile(
     r'<li class="b_algo".*?<h2><a href="([^"]+)"[^>]*>(.*?)</a></h2>',
     re.IGNORECASE | re.DOTALL,
@@ -145,6 +151,35 @@ def is_generic_social(url: str) -> bool:
     return host in {"facebook.com", "www.facebook.com", "instagram.com", "www.instagram.com"}
 
 
+def is_portal_social_for_site(site_url: str, social_url: str) -> bool:
+    site = normalize_url(site_url).lower()
+    social = normalize_url(social_url).lower()
+    if not site or not social:
+        return False
+
+    blocked = [
+        (
+            "https://arquidiocese-braga.pt/local/",
+            {
+                "https://www.facebook.com/arquidiocese.braga",
+                "https://www.instagram.com/arquidiocese.braga",
+            },
+        ),
+        (
+            "https://turismo.diocese-algarve.pt/",
+            {
+                "http://www.facebook.com/pages/turismo-diocese-algarve/157859314324767",
+                "https://www.facebook.com/pages/turismo-diocese-algarve/157859314324767",
+            },
+        ),
+    ]
+
+    for prefix, blocked_socials in blocked:
+        if site.startswith(prefix) and social in blocked_socials:
+            return True
+    return False
+
+
 def is_bad_site(url: str) -> bool:
     host = urlparse(url).netloc.lower()
     bad_hosts = {
@@ -157,7 +192,7 @@ def is_bad_site(url: str) -> bool:
     return any(h in host for h in bad_hosts)
 
 
-def fetch(session: requests.Session, url: str, timeout: int = 12) -> str:
+def fetch(session: requests.Session, url: str, timeout: int = DEFAULT_FETCH_TIMEOUT) -> str:
     r = session.get(url, headers=UA, timeout=timeout)
     r.raise_for_status()
     r.encoding = r.encoding or "utf-8"
@@ -242,7 +277,7 @@ def score_candidate(row: dict, url: str, title: str, rank: int, platform: str) -
 
 
 def web_search(session: requests.Session, query: str) -> list[tuple[str, str]]:
-    r = session.get(BING_SEARCH + quote_plus(query), headers=UA, timeout=12)
+    r = session.get(BING_SEARCH + quote_plus(query), headers=UA, timeout=SEARCH_TIMEOUT)
     r.raise_for_status()
     results = []
     for href, raw_title in RESULT_RE.findall(r.text):
@@ -288,7 +323,7 @@ class OfficialDirectories:
             f"https://aparoquia.com/apo/webservice/v2/listar/paroquias/idDiocese/{diocese_id}",
             data={"authCode": "ecfd1e3a7c22352e63ea9acda5299ae6"},
             headers=UA,
-            timeout=20,
+            timeout=DIRECTORY_TIMEOUT,
         ).json()
         index = {}
         for item in items:
@@ -307,7 +342,7 @@ class OfficialDirectories:
                 "data": "ecfd1e3a7c22352e63ea9tert5299ae6",
             },
             headers=UA,
-            timeout=20,
+            timeout=DIRECTORY_TIMEOUT,
         )
         items = json.loads(json.loads(r.text))
         index = {}
@@ -324,7 +359,7 @@ class OfficialDirectories:
             "https://aparoquia.com/apo/webservice/v2/listar/paroquias/idDiocese/17",
             data={"authCode": "ecfd1e3a7c22352e63ea9acda5299ae6"},
             headers=UA,
-            timeout=20,
+            timeout=DIRECTORY_TIMEOUT,
         ).json()
         index = {}
         for item in items:
@@ -340,7 +375,7 @@ class OfficialDirectories:
             "https://aparoquia.com/apo/webservice/vSantarem/listar/paroquias/idDiocese/16",
             data={"authCode": "ecfd1e3a7c22352e63ea9acda5299ae6"},
             headers=UA,
-            timeout=20,
+            timeout=DIRECTORY_TIMEOUT,
         ).json()
         index = {}
         for item in items:
@@ -352,7 +387,7 @@ class OfficialDirectories:
     def _load_leiria(self):
         if self._leiria is not None:
             return self._leiria
-        text = fetch(self.session, "https://www.leiria-fatima.pt/organica/paroquias/", timeout=20)
+        text = fetch(self.session, "https://www.leiria-fatima.pt/organica/paroquias/", timeout=DIRECTORY_TIMEOUT)
         rows = re.findall(r'<tr[^>]*class="ninja_table_row_.*?</tr>', text, re.IGNORECASE | re.DOTALL)
         index = {}
         for row in rows:
@@ -374,7 +409,7 @@ class OfficialDirectories:
             "https://aparoquia.com/apo/webservice/v2/listar/paroquias/idDiocese/2",
             data={"authCode": "ecfd1e3a7c22352e63ea9acda5299ae6"},
             headers=UA,
-            timeout=20,
+            timeout=DIRECTORY_TIMEOUT,
         ).json()
         index = {}
         for item in items:
@@ -390,7 +425,7 @@ class OfficialDirectories:
             "https://aparoquia.com/apo/webservice/v2/listar/paroquias/idDiocese/10",
             data={"authCode": "ecfd1e3a7c22352e63ea9acda5299ae6"},
             headers=UA,
-            timeout=20,
+            timeout=DIRECTORY_TIMEOUT,
         ).json()
         index = {}
         for item in items:
@@ -406,7 +441,7 @@ class OfficialDirectories:
             "https://aparoquia.com/apo/webservice/v2/listar/paroquias/idDiocese/20",
             data={"authCode": "ecfd1e3a7c22352e63ea9acda5299ae6"},
             headers=UA,
-            timeout=20,
+            timeout=DIRECTORY_TIMEOUT,
         ).json()
         index = {}
         for item in items:
@@ -589,7 +624,7 @@ class OfficialDirectories:
     def _braga_lookup(self, row: dict) -> dict:
         url = f"https://arquidiocese-braga.pt/local/{slugify(row.get('nome',''))}-{slugify(row.get('orago',''))}"
         try:
-            html_text = fetch(self.session, url, timeout=8)
+            html_text = fetch(self.session, url, timeout=BRAGA_LOOKUP_TIMEOUT)
         except Exception:
             return {}
         title = clean_html_text(TITLE_RE.search(html_text).group(1)) if TITLE_RE.search(html_text) else ""
@@ -635,15 +670,27 @@ def scan_site_for_socials(session: requests.Session, row: dict) -> None:
     if not site or (row.get("facebook") and row.get("instagram")):
         return
     try:
-        html_text = fetch(session, site, timeout=10)
+        html_text = fetch(session, site, timeout=SITE_SOCIAL_SCAN_TIMEOUT)
     except Exception:
         return
     hrefs = [normalize_url(unquote(h)) for h in HREF_RE.findall(html_text)]
     for h in hrefs:
-        if not row.get("facebook") and is_valid_public_url(h) and is_facebook(h) and not is_generic_social(h):
+        if (
+            not row.get("facebook")
+            and is_valid_public_url(h)
+            and is_facebook(h)
+            and not is_generic_social(h)
+            and not is_portal_social_for_site(site, h)
+        ):
             row["facebook"] = h
             row["facebook_confidence"] = row.get("site_confidence") or "0.9"
-        if not row.get("instagram") and is_valid_public_url(h) and is_instagram(h) and not is_generic_social(h):
+        if (
+            not row.get("instagram")
+            and is_valid_public_url(h)
+            and is_instagram(h)
+            and not is_generic_social(h)
+            and not is_portal_social_for_site(site, h)
+        ):
             row["instagram"] = h
             row["instagram_confidence"] = row.get("site_confidence") or "0.9"
         if row.get("facebook") and row.get("instagram"):
